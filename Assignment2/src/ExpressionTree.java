@@ -126,14 +126,31 @@ public class ExpressionTree {
 					else if( cur == 0 ){
 						op.push( new Node( null, str, null ));
 					}
-					else if( cur >= last ){
+					else if( cur > last ){
 						op.push( new Node( null, str, null ));
 					}
-					else if( cur < last ){
+					else if( cur == last &&( cur == 4 ||
+						cur == 0 ||cur == 3 )){
+						op.push( new Node( null, str, null ));
+					}
+					else if( cur == last &&( cur == 1 || cur == 2 )){
 						Node right = tree.pop();
 						Node left = tree.pop();
 						Node newNode = new Node( left, op.pop().data , right );
 						tree.push(newNode);
+						op.push( new Node( null, str, null ));
+					}
+					else if( cur < last ){
+						while( cur <= last ){
+							Node right = tree.pop();
+							Node left = tree.pop();
+							Node newNode = new Node( left, op.pop().data , right );
+							tree.push(newNode);
+							if(!op.empty())
+								last = precedent(op.peek().data);
+							else
+								last = 0;
+						}
 						op.push( new Node( null, str, null ));
 					}
 					
@@ -226,7 +243,7 @@ public class ExpressionTree {
 		String right = toInfix(r.right);
 		
 		if( r.data.equals("!") ){
-			return r.data + " " +right;
+			return "( "+r.data + " " +right+ " )";
 		}
 		if( !left.equals("") )
 			left = "( "+left + " ";
