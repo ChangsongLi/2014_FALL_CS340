@@ -24,14 +24,15 @@ public class PriorityQueue {
 	public Object deleteMin() {
 		// PRE: !empty()
 		Data d = data[1];
+		data[1] = null;
 		curSize--;
 		if (!empty()) {
 			int index = 1;
-			data[1] = data[curSize++];
-			data[curSize++] = null;
+			data[1] = data[curSize+1];
+			data[curSize+1] = null;
 			while (index * 2 + 1 <= curSize) {
 				if (data[index].key > data[2 * index].key
-						&& data[index].key > data[2 * index + 1].key) {
+						|| data[index].key > data[2 * index + 1].key) {
 					if (data[2 * index + 1].key > data[2 * index].key) {
 						swap(index, 2 * index);
 						index = 2 * index;
@@ -40,17 +41,20 @@ public class PriorityQueue {
 						index = 2 * index + 1;
 					}
 				}
+				else{
+					return d.obj;
+				}
 			}
-			if (index * 2 == curSize)
-				if (data[index].key > data[curSize].key)
+			if (index * 2 == curSize){
+				if (data[index].key > data[curSize].key){
 					swap(index, curSize);
-		} else {
-			data[1] = null;
+				}
+			}
 		}
 		return d.obj;
 	}
 
-	public void swap(int i1, int i2) {
+	private void swap(int i1, int i2) {
 		Data tmp = data[i1];
 		data[i1] = data[i2];
 		data[i2] = tmp;
@@ -81,7 +85,8 @@ public class PriorityQueue {
 			data[1] = tmp;
 			curSize++;
 		} else {
-			int index = ++curSize;
+			curSize = curSize + 1;
+			int index = curSize;
 
 			while (index / 2 != 0 && data[index / 2].key > k) {
 				data[index] = data[index / 2];
@@ -93,7 +98,17 @@ public class PriorityQueue {
 	}
 
 	public int getSize() {
-		return data.length - 1;
+		return curSize;
+	}
+	
+	public void printQueue(){
+		int i = 1;
+		while(i < curSize+1){
+			System.out.println(data[i].key + " ");
+			i++;
+		}
+		System.out.println();
+		System.out.println(curSize);
 	}
 
 }
