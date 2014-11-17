@@ -18,6 +18,9 @@ public class SymbolTable {
 	
 	public SymbolTable(int s){
 		table = new Node[s];
+		for(int i = 0; i < s; i++){
+			table[i] = new Node(null, null, null);
+		}
 	}
 	
 	private	int	hash(String k){
@@ -140,7 +143,75 @@ public class SymbolTable {
 	}
 	
 	public static void main(String args[]){
-		//code to test SymbolTable
+		SymbolTable s = new SymbolTable(10);
+		
+		// test insert methods
+		System.out.println("\ntest insert methods");
+		System.out.println(s.insert("This"));
+		System.out.println(s.toString());
+		
+		System.out.println(s.insert("is"));
+		System.out.println(s.toString());
+		
+		System.out.println(s.insert("a",100));
+		System.out.println(s.toString());
+		
+		System.out.println(s.insert("debug",199));
+		System.out.println(s.toString());
+		
+		System.out.println(s.insert("debug",1));
+		System.out.println(s.toString());
+		
+		System.out.println(s.insert("test",4000));
+		System.out.println(s.toString());
+		
+		// test find method
+		System.out.println("\ntest find method");
+		System.out.println(s.find("test"));
+		System.out.println(s.find("debug"));
+		System.out.println(s.find("a"));
+		System.out.println(s.find("A"));
+		System.out.println(s.find("is"));
+		
+		// test getData;
+		System.out.println("\ntest getData");
+		System.out.println(s.getData("test"));
+		System.out.println(s.getData("dasdsdadasd"));
+		System.out.println(s.getData("debug"));
+		System.out.println(s.getData("a"));
+		System.out.println(s.getData("is"));
+		
+		// test set value
+		System.out.println("\ntest set value");
+		s.setValue("a", 200);
+		System.out.println(s.toString());
+		s.setValue("This", 999);
+		System.out.println(s.toString());
+		
+		// test STIterator		
+		System.out.println("\ntest STIterator");
+		System.out.println("The output should be: is a This test debug");
+		STIterator sti = s.new STIterator();
+		System.out.print("The output is: ");
+		while(sti.hasNext()){
+			System.out.print(sti.next()+" ");
+		}
+		System.out.println();
 	}
 	
+	public String toString(){
+		StringBuilder ret = new StringBuilder("");
+		for(int i = 0; i < table.length; i++){
+			ret.append(i+": ");
+			Node node = table[i];
+			int index = 0;
+			while(node.next != null){
+				ret.append(index +  " :key: "+node.next.key+", data: "+node.next.data + ",  ");
+				node = node.next;
+				index++;
+			}
+			ret.append("\n");
+		}
+		return ret.toString();
+	}
 }
