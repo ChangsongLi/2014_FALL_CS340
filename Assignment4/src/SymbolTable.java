@@ -66,6 +66,19 @@ public class SymbolTable {
 		return false;
 	}
 	
+	public boolean delete(String k){
+		if(find(k)){
+			int num = hash(k);
+			Node node = table[num];
+			while(!node.next.key.equals(k)){
+				node = node.next;
+			}
+			node.next = node.next.next;
+			return true;
+		}
+		return false;
+	}
+	
 	public Object getData(String k){
 		int i = hash(k);
 		Node tmp = table[i];
@@ -86,6 +99,10 @@ public class SymbolTable {
 			}
 			tmp = tmp.next;
 		}
+	}
+	
+	public Iterator<String> iterator() {
+		return new STIterator();
 	}
 	
 	public class STIterator implements Iterator<String>{
@@ -120,26 +137,7 @@ public class SymbolTable {
 				n = null;
 			}
 			return ret;
-		}
-		
-		public boolean delete(String k){
-			if(find(k)){
-				int num = hash(k);
-				Node node = table[num];
-				while(!node.next.key.equals(k)){
-					node = node.next;
-				}
-				node.next = node.next.next;
-				return true;
-			}
-			return false;
-		}
-		
-		public Iterator<String> iterator() { 
-			//return a new iterator object
-			return this;
-		}
-		
+		}	
 	}
 	
 	public static void main(String args[]){
@@ -214,4 +212,5 @@ public class SymbolTable {
 		}
 		return ret.toString();
 	}
+
 }

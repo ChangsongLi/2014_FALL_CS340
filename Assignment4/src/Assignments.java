@@ -65,7 +65,7 @@ public class Assignments {
 	
 	private void printVar(){
 		System.out.println("Final Variable Values");
-		SymbolTable.STIterator sti = s.new STIterator();
+		Iterator<String> sti = s.iterator();
 		while(sti.hasNext()){
 			String output = sti.next();
 			if(s.getData(output) != null){
@@ -122,6 +122,7 @@ public class Assignments {
 		}
 		doOperator(operators, operands, "");
 		root = operands.pop();	
+		s.close();
 	}
 	
 	private void doOperator(Stack<Node> operators, Stack<Node> operands, String op) {
@@ -189,12 +190,4 @@ public class Assignments {
 		return r.left == null && r.right == null;
 	}
 	
-	private String printTree(Node n){
-		if(n == null)
-			return "";
-		String left = printTree(n.left);
-		String right = printTree(n.right);
-		
-		return left+" "+n.data+" "+right;
-	}
 }
