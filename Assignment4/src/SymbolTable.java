@@ -1,3 +1,9 @@
+/**
+ * Hashing table data structure.
+ * 
+ * @author Changsong Li
+ * 
+ */
 import	java.util.*;
 
 public class SymbolTable {
@@ -189,12 +195,21 @@ public class SymbolTable {
 		// test STIterator		
 		System.out.println("\ntest STIterator");
 		System.out.println("The output should be: is a This test debug");
-		STIterator sti = s.new STIterator();
+		Iterator<String> sti = s.iterator();
 		System.out.print("The output is: ");
 		while(sti.hasNext()){
 			System.out.print(sti.next()+" ");
 		}
 		System.out.println();
+		
+		// test delete
+		if(s.delete("debug"))
+			System.out.println("Code is right");
+		else
+			System.out.println("Code is wrong");
+		
+		System.out.println(s.toString());
+		
 	}
 	
 	public String toString(){

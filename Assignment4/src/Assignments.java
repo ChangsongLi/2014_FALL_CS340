@@ -1,9 +1,14 @@
+/**
+ *  Using Hashing table to save the value of variable.
+ *  
+ *   @author Changsong Li
+ */
+
 import java.io.*;
 import java.util.*;
 
-
 public class Assignments {
-	
+
 	private class Node {
 		Node left;
 		String data;
@@ -15,92 +20,90 @@ public class Assignments {
 			right = r;
 		}
 	}
-	
+
 	Vector<String> v;
 	SymbolTable s;
 	Node root;
 	private final String gtExp = "!";
 	private final String gtMult = "!^*/%";
 	private final String gtAdd = "!^*/%+-";
-	
-	
-	public static void main(String[] args) throws IOException{
+
+	public static void main(String[] args) throws IOException {
 		@SuppressWarnings("unused")
 		Assignments a = new Assignments(args[0]);
 	}
-	
-	public Assignments(String file) throws IOException{
-		v = new Vector<String>(10,10);
-		BufferedReader bf = new BufferedReader( new FileReader(file)); 
+
+	public Assignments(String file) throws IOException {
+		s = new SymbolTable(20);
+		v = new Vector<String>(10, 10);
+		BufferedReader bf = new BufferedReader(new FileReader(file));
 		String line;
-		while((line = bf.readLine()) != null){
-			v.add(line);
+		while ((line = bf.readLine()) != null) {
+			print(line);
 		}
 		bf.close();
-		s = new SymbolTable(v.size());
-		print();
-	}
-	
-	private void print(){
-		for(int i = 0; i < v.size(); i++){
-			Scanner scan = new Scanner(v.elementAt(i));
-			String key = scan.next();
-			s.insert(key);
-			scan.next();
-			String line = scan.nextLine();
-			if(checkValid(line)){
-				buildInfix(line);
-				int value = evaluate(root);
-				s.setValue(key, value);
-			}
-			else{
-				System.out.println("Error: "+v.elementAt(i));
-				System.out.print( getInvalid(line));
-			}
-			scan.close();
-		}
-		
 		printVar();
 	}
-	
-	private void printVar(){
+
+	private void print(String str) {
+		Scanner scan = new Scanner(str);
+		String key = scan.next();
+		s.insert(key);
+		scan.next();
+		String line = scan.nextLine();
+		if (checkValid(line)) {
+			buildInfix(line);
+			int value = evaluate(root);
+			s.setValue(key, value);
+		} else {
+			System.out.println("Error: " + str);
+			System.out.print(getInvalid(line));
+		}
+		scan.close();
+
+	}
+
+	private void printVar() {
 		System.out.println("Final Variable Values");
 		Iterator<String> sti = s.iterator();
-		while(sti.hasNext()){
+		while (sti.hasNext()) {
 			String output = sti.next();
-			if(s.getData(output) != null){
-				int value = (int)s.getData(output);
-				System.out.println(output+ " "+value);
-			}
-			else{
-				System.out.println(output+ " unassigned");
+			if (s.getData(output) != null) {
+				int value = (int) s.getData(output);
+				System.out.println(output + " " + value);
+			} else {
+				System.out.println(output + " unassigned");
 			}
 		}
 	}
-	
-	private boolean checkValid(String str){
+
+	private boolean checkValid(String str) {
+		int check = 1;
 		Scanner scan = new Scanner(str);
-		while(scan.hasNext()){
+		while (scan.hasNext()) {
 			String part = scan.next();
-			if(Character.isLetter(part.charAt(0))){
-				if(s.getData(part) == null){
-					scan.close();
-					return false;
+			if (Character.isLetter(part.charAt(0))) {
+				if (s.getData(part) == null) {
+					s.insert(part);
+					check = 0;
 				}
 			}
 		}
 		scan.close();
+		if (check == 0) {
+			return false;
+		}
 		return true;
 	}
-	
-	private String getInvalid(String str){
+
+	private String getInvalid(String str) {
 		String ret = "";
 		Scanner scan = new Scanner(str);
-		while(scan.hasNext()){
+		while (scan.hasNext()) {
 			String part = scan.next();
-			if(Character.isLetter(part.charAt(0))){
-				if(s.getData(part) == null){
-					ret = ret + part +" has not been assigned a value\n";
+			if (Character.isLetter(part.charAt(0))) {
+				if (s.getData(part) == null) {
+					ret = ret + part + " has not been assigned a value\n";
 				}
 			}
 		}
@@ -108,58 +111,70 @@ public class Assignments {
 		scan.close();
 		return ret;
 	}
-	
+
 	private void buildInfix(String exp) {
 		Stack<Node> operators = new Stack<>();
 		Stack<Node> operands = new Stack<>();
 		Scanner s = new Scanner(exp);
 		while (s.hasNext()) {
 			String token = s.next();
-			if (Character.isDigit(token.charAt(0)) || Character.isLetter(token.charAt(0)))
+			if (Character.isDigit(token.charAt(0))
+					|| Character.isLetter(token.charAt(0)))
 				operands.push(new Node(null, token, null));
-			else 
+			else
 				doOperator(operators, operands, token);
 		}
 		doOperator(operators, operands, "");
-		root = operands.pop();	
+		root = operands.pop();
 		s.close();
 	}
-	
-	private void doOperator(Stack<Node> operators, Stack<Node> operands, String op) {
-		while (!operators.empty() && !operators.peek().data.equals("(") && precLess(op, operators.peek().data)) {
+
+	private void doOperator(Stack<Node> operators, Stack<Node> operands,
+			String op) {
+		while (!operators.empty() && !operators.peek().data.equals("(")
+				&& precLess(op, operators.peek().data)) {
 			Node oper = operators.pop();
-			if (oper.data.charAt(0) != '!') 
+			if (oper.data.charAt(0) != '!')
 				oper.right = operands.pop();
 			oper.left = operands.pop();
 			operands.push(oper);
 		}
-		if (op.equals(")"))  operators.pop();
-		if (!op.equals(")")) operators.push(new Node(null, op, null));
+		if (op.equals(")"))
+			operators.pop();
+		if (!op.equals(")"))
+			operators.push(new Node(null, op, null));
 	}
-	
+
 	private boolean precLess(String op1, String op2) {
 
 		switch (op1) {
-			case "(": return false;
-			case ")": return true;
-			case "!": return false;
-			case "^": return gtExp.indexOf(op2) != -1;
-			case "*":
-			case "/":
-			case "%": return gtMult.indexOf(op2) != -1;
-			case "+": 
-			case "-": return gtAdd.indexOf(op2) != -1;
-			case "" : return true;
+		case "(":
+			return false;
+		case ")":
+			return true;
+		case "!":
+			return false;
+		case "^":
+			return gtExp.indexOf(op2) != -1;
+		case "*":
+		case "/":
+		case "%":
+			return gtMult.indexOf(op2) != -1;
+		case "+":
+		case "-":
+			return gtAdd.indexOf(op2) != -1;
+		case "":
+			return true;
 		}
-		return true; //will not be reached
+		return true; // will not be reached
 	}
-	
+
 	public int evaluate(Node r) {
 		int x;
 		int y = 0;
-		if (isLeaf(r)){ 
-			if(Character.isLetter(r.data.charAt(0))){
-				return (int)s.getData(r.data);
+		if (isLeaf(r)) {
+			if (Character.isLetter(r.data.charAt(0))) {
+				return (int) s.getData(r.data);
 			}
 			return Integer.parseInt(r.data);
 		}
@@ -168,26 +183,33 @@ public class Assignments {
 			y = evaluate(r.right);
 
 		switch (r.data) {
-			case "!":	return -x;
+		case "!":
+			return -x;
 
-			case "^":	return (int) Math.pow(x,y);
+		case "^":
+			return (int) Math.pow(x, y);
 
-			case "*":	return x*y;
+		case "*":
+			return x * y;
 
-			case "/":	return x/y;
+		case "/":
+			return x / y;
 
-			case "%":	return x%y;
+		case "%":
+			return x % y;
 
-			case "+":	return x+y;
+		case "+":
+			return x + y;
 
-			case "-":	return x-y;
+		case "-":
+			return x - y;
 
 		}
-		return 0; //never reached included for compiler
+		return 0; // never reached included for compiler
 	}
-	
+
 	private boolean isLeaf(Node r) {
 		return r.left == null && r.right == null;
 	}
-	
+
 }
