@@ -17,7 +17,6 @@ public class BTree {
 		}
 
 		public BTreeNode(int[] k, long[] ch, int c, long loc) {
-			// TODO Auto-generated constructor stub
 			location = loc;
 			count = c;
 			children = ch;
@@ -27,13 +26,14 @@ public class BTree {
 		void readNode() throws IOException {
 			r.seek(location);
 			count = r.readInt();
-			for (int i = 0; i < keys.length; i++) {
+			for (int i = 0; i < order-1; i++) {
 				keys[i] = r.readInt();
 			}
-			for (int i = 0; i < children.length; i++) {
+			for (int i = 0; i < order; i++) {
 				children[i] = r.readLong();
 			}
 		}
+		
 		long getLocation(){
 			return location;
 		}
@@ -41,14 +41,15 @@ public class BTree {
 		void writeNode() throws IOException {
 			r.seek(location);
 			r.writeInt(count);
-			for (int i = 0; i < keys.length; i++) {
+			for (int i = 0; i < order-1; i++) {
 				r.writeInt(keys[i]);
 			}
-			for (int i = 0; i < children.length; i++) {
+			for (int i = 0; i < order; i++) {
 				r.writeLong(children[i]);
 			}
 		}
-
+		
+		// return array index number 0 - size
 		public int getKeyLoc(int k) {
 			for (int i = 0; i < count; i++) {
 				if (keys[i] > k)
@@ -57,6 +58,7 @@ public class BTree {
 			return count;
 		}
 
+		
 		public void setNewRoot(int k, long leftChild, long rightChild){
 			keys[0] = k;
 			children[0] = leftChild;
@@ -71,15 +73,17 @@ public class BTree {
 		public void insert(int key, long child) throws IOException {
 			if(!isFull()){
 				int index = getKeyLoc(key);
-				for(int i = count; i > index; i--){
+				for(int i = keys.length - 1; i > index; i--){
 					keys[i] = keys[i-1];
 				}
 				keys[index] = key;
-				for(int i = count+1; i > index + 1; i--){
-					children[i] = children[i-1];
-				}
-				children[index+1] = child;
 				count++;
+				if(children[0] != 0){
+					for(int i = children.length - 1; i > index + 1; i--){
+						children[i] = children[i-1];
+					}
+					children[index+1] = child;
+				}
 				writeNode();
 				split = false;
 			}
@@ -89,6 +93,7 @@ public class BTree {
 			}
 		}
 
+		// find a specific number
 		public boolean find(int k) {
 			for (int i = 0; i < count; i++) {
 				if (keys[i] == k)
@@ -109,8 +114,10 @@ public class BTree {
 				newKeys = Arrays.copyOf(newKeys, max);
 				long[] newChildren = new long[order];
 				
-				long newLoc = r.length(); 
+				long newLoc = r.length();
+				newChildren[order-1] = children[order-1];
 				children[order-1] = newLoc;
+				
 				BTreeNode newNode = new BTreeNode(newKeys,newChildren,order - count,newLoc);
 				newNode.writeNode();
 				writeNode();
@@ -118,16 +125,17 @@ public class BTree {
 				splitChild = newLoc;
 			}
 			else{
+				int index = getKeyLoc(k);
 				int[] newKeys = getNewKeys(k);
 				splitKey = newKeys[min];
 				keys = Arrays.copyOfRange(newKeys, 0, min);
-				keys = Arrays.copyOf(keys, max);				
+				keys = Arrays.copyOf(keys, max);
 				newKeys = Arrays.copyOfRange(newKeys, min+1, order);
 				newKeys = Arrays.copyOf(newKeys, max);
 				count = min;
-			
+				
 				int newCount = order - min - 1;
-				long[] newChildren = getNewChildren(k,c);
+				long[] newChildren = getNewChildren(k,c,index);
 				children = Arrays.copyOfRange(newChildren, 0, min+1);
 				children = Arrays.copyOf(children, order);
 				newChildren = Arrays.copyOfRange(newChildren, min+1, order+1);
@@ -140,9 +148,9 @@ public class BTree {
 				newNode.writeNode();
 			}
 		}
-		private long[] getNewChildren(int k,long c){
+		private long[] getNewChildren(int k,long c, int index){
 			long[] newChildren = new long[order+1];
-			int index = getKeyLoc(k) + 1;
+			index++;
 			int count = 0;
 			for(int i = 0; i < index; i++){
 				newChildren[count] = children[i];
@@ -173,18 +181,22 @@ public class BTree {
 			}
 			return newKeys;
 		}
+		
+		public boolean hasNextNode(){
+			return children[order-1] != 0;
+		}
 
 	}
 
 	long head;
-	static RandomAccessFile r;
+	RandomAccessFile r;
 	String name;
 	int order, max, min;
 	BTreeNode root;
-	Stack<BTreeNode> stack;
+	Stack<BTreeNode> stack = new Stack<BTreeNode>();
 	boolean split = false;
-	int splitKey = 0;
-	long splitChild = 0;
+	int splitKey;
+	long splitChild;
 	
 
 	public BTree(String n, int ord) throws IOException {
@@ -204,7 +216,6 @@ public class BTree {
 		r.writeInt(order);
 		head = 0;
 		r.writeLong(head);
-		stack = new Stack<BTreeNode>();
 	}
 
 	public BTree(String n) throws IOException, RuntimeException {
@@ -238,7 +249,6 @@ public class BTree {
 			r.writeLong(head);
 			return;
 		}
-
 		if (!searth(k)) {
 			BTreeNode tmp = stack.pop();
 			tmp.insert(k,0);
@@ -255,13 +265,15 @@ public class BTree {
 				root.writeNode();
 				r.seek(4);
 				r.writeLong(loc);
+				head = loc;
 			}
 		}
 	}
 
 	public boolean searth(int k) throws IOException {
 		// if k is in the tree return true otherwise return false
-		stack.removeAllElements();
+		while(!stack.isEmpty())
+			stack.pop();
 		if (head != 0) {
 			BTreeNode tmp = root;
 			while (tmp.children[0] != 0) {
@@ -269,9 +281,9 @@ public class BTree {
 				tmp = new BTreeNode(tmp.children[tmp.getKeyLoc(k)]);
 				tmp.readNode();
 			}
+			stack.push(tmp);
 			if (tmp.find(k))
 				return true;
-			stack.push(tmp);
 		}
 		return false;
 	}
@@ -279,19 +291,86 @@ public class BTree {
 	public class BTIterator implements Iterator<Integer> {
 		// An iterator that iterates through a range of keys in the tree
 		// The range is provided in the arguments to the constructor
-
-		public BTIterator(int low, int high) {
+		boolean check = true;
+		int next;
+		BTreeNode n;
+		int p,l,h;
+		public BTIterator(int low, int high) throws IOException {
 			// an iterator that can be used to find all the keys, k, in //the
 			// tree such that low <= k <= high
+			l = low;
+			h = high;
+			if(low > high || head == 0){
+				check = false;
+			}
+			else{
+				if(searth(low)){
+					n = stack.pop();
+					next = low;
+					p = n.getKeyLoc(low) - 1;
+					return;
+				}
+				n = stack.pop();
+				int pos = n.getKeyLoc(low);
+				if(pos == n.count){
+					if(!n.hasNextNode()){
+						check = false;
+						return;
+					}
+					n = new BTreeNode(n.children[order-1]);
+					n.readNode();
+					if(check(n.keys[0])){
+						next = n.keys[0];
+						p = 0;
+					}else{
+						check = false;
+					}
+				}
+				else{
+					if(check(n.keys[pos])){
+						next = n.keys[pos];
+						p = pos;
+					}
+					else{
+						check = false;
+					}
+				}
+				
+			}
 		}
 
+		private boolean check(int num){
+			return num >= l && num <= h;
+		}
 		public boolean hasNext() {
-			return true;
+			return check;
 		}
 
-		public Integer next() {
+		public Integer next(){
 			// PRE: hasNext();
-			return 0;
+			int ret = next;
+			p++;
+			if( p == n.count){
+				if(n.hasNextNode()){
+					n = new BTreeNode(n.children[order-1]);
+					try {
+						n.readNode();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					next = n.keys[0];
+					p = 0;
+					check = check(next);
+					
+				}else{
+					check = false;
+				}
+			}
+			else{
+				check = check(n.keys[p]);
+				next = n.keys[p];
+			}
+			return ret;
 		}
 
 		public void remove() {
@@ -299,48 +378,13 @@ public class BTree {
 		}
 	}
 
-	public Iterator<Integer> iterator(int low, int high) {
+	public Iterator<Integer> iterator(int low, int high) throws IOException {
 		// return a new iterator object
 		return new BTIterator(low, high);
 	}
 
-	public void close() {
-	}
-	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		try {
-			BTree m = new BTree("file.txt", 5);
-			m.insert(10);
-			m.insert(100);
-			m.insert(50);
-			m.insert(500);
-			m.insert(200);
-			m.insert(700);
-			m.insert(600);
-			
-			r.seek(0);
-			System.out.println(r.readInt());
-			System.out.println(r.readLong());
-			while(true){
-				System.out.println("count");
-				System.out.println(r.readInt());
-				System.out.println("keys");
-				System.out.println(r.readInt());
-				System.out.println(r.readInt());
-				System.out.println(r.readInt());
-				System.out.println(r.readInt());
-				System.out.println("children");
-				System.out.println(r.readLong());
-				System.out.println(r.readLong());
-				System.out.println(r.readLong());
-				System.out.println(r.readLong());
-				System.out.println(r.readLong());
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void close() throws IOException {
+		r.close();
 	}
 
 }
